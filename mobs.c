@@ -1,14 +1,9 @@
-#include <stddef.h>
 
 #include "mobs.h"
 
-struct MobType_tag {
-    wchar_t sym;
-    int hp;
-    const char *name, *desc;
-} const allMobTypesArray[] = {
+const MobType allMobTypesArray[] = {
     {'x', 10, "food", "stuffs"}
-};
+},
+*const allMobTypes = allMobTypesArray;
 
-const MobType *const allMobTypes = allMobTypesArray;
-const int mobTypeCount = sizeof(allMobTypes)/sizeof(MobType);
+const int mobTypeCount = sizeof(allMobTypes)/sizeof(*allMobTypes);
