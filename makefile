@@ -19,3 +19,6 @@ urogue: main.o mobs.o
 	gcc $(cflags) -o $@ $< $(cinc) -M
 
 -include main.d mobs.d
+
+clean:
+	rm -f *.o *.d urogue
