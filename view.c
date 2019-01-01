@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <errno.h>
 #include <locale.h>
 #include <stdlib.h>
@@ -22,14 +21,17 @@ View *view_init() {
     setlocale(LC_ALL, "");
 
     v->win = initscr();
-    assert(v->win);
+    if (!v->win) {
+        perror("Failed to start ncurses");
+        exit(errno);
+    }
 
     if (cbreak() || // disable buffering, immediate input
         noecho() || // don't echo user input
         nonl()   || // disable newline translation
         keypad(v->win, true) // enable translation of arrow keys
     ) {
-        perror("Failed to set up ncurses");
+        perror("Failed to configure ncurses");
         exit(errno);
     }
 
@@ -37,6 +39,7 @@ View *view_init() {
 }
 
 void view_destroy(View *v) {
-    endwin();
+    if (endwin())
+        perror("Warning: failed to end ncurses");
     free(v);
 }
