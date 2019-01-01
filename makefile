@@ -1,24 +1,26 @@
 #!/usr/bin/env make -f
 
-pkgenv=PKG_CONFIG_PATH=/usr/local/opt/ncurses/lib/pkgconfig pkg-config
+export
 
-cflags=-Wall -std=c17
-ldflags=$(cflags)
-cinc=$(shell $(pkgenv) ncursesw --cflags)
-ldinc=$(shell $(pkgenv) ncursesw --libs)
+# For HomeBrew compatibility
+pkgenv=PKG_CONFIG_PATH=/usr/local/opt/ncurses/lib/pkgconfig pkg-config ncursesw
+
+flags=-Wall -std=c17
+cflags=$(flags) $(shell $(pkgenv) --cflags)
+ldflags=$(flags) $(shell $(pkgenv) --libs)
 
 all: urogue
 
-urogue: main.o mobs.o
-	gcc $(ldflags) -o $@ $^ $(ldinc)
+urogue: main.o mobs.o view.o
+	gcc -o $@ $^ $$ldflags
 
 %.o: %.d
-	gcc $(cflags) -o $@ $*.c $(cinc) -c
+	gcc -o $@ $*.c $$cflags -c
 
-%.d: %.c
-	gcc $(cflags) -o $@ $< $(cinc) -M
+%.d: %.c makefile
+	gcc -o $@ $< $$cflags -M
 
--include main.d mobs.d
+-include main.d mobs.d view.d
 
 clean:
 	rm -f *.o *.d urogue
