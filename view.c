@@ -33,7 +33,10 @@ View *view_init() {
     return v;
 }
 
-void view_destroy(View *v) {
-    check_b(ERR != endwin(), "end ncurses");
-    free(v);
+void view_destroy(View **v) {
+    if (*v) {
+        check_b(ERR != endwin(), "end ncurses");
+        free(*v);
+        *v = NULL;
+    }
 }

@@ -8,9 +8,7 @@
 static View *view = NULL;
 
 static void exitHook() {
-    puts("Exiting...");
-    if (view)
-        view_destroy(view);
+    view_destroy(&view);
 }
 
 int main(int argc, const char **argv) {
