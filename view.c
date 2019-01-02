@@ -8,33 +8,32 @@
 
 #define INVIS_CUR 0
 
-struct View_tag {
+struct {
     WINDOW *win;
-};
+} static view;
 
-View *view_init() {
-    View *v = malloc(sizeof(View));
-    assert_p(v, "allocate view struct");
-
+void view_init() {
     // Set entire locale based on environment
     // Recommended by man ncurses(3X)
     assert_p(setlocale(LC_ALL, ""), "set the locale");
 
-    v->win = initscr();
-    assert_p(v->win, "start ncurses");
+    view.win = initscr();
+    assert_p(view.win, "start ncurses");
 
     assert_b(ERR != start_color(), "enable colour mode");
     assert_b(ERR != cbreak(), "disable buffering for immediate input");
     assert_b(ERR != noecho(), "disable user input echo");
     assert_b(ERR != nonl(), "disable newline translation");
     assert_b(ERR != curs_set(INVIS_CUR), "hide the cursor");
-    assert_b(ERR != keypad(v->win, true), "enable translation of arrow keys");
+    assert_b(ERR != keypad(view.win, true), "enable translation of arrow keys");
 
-    return v;
+    // todo - make these realistic
+    assert_b(COLOR_PAIRS >= 16, "support enough colour pairs");
+    assert_b(COLORS >= 256, "support enough colours");
+    // note - each colour channel supports 1000 values
 }
 
-void view_destroy(View **v) {
-    check_b(ERR != endwin(), "end ncurses");
-    free(*v);
-    *v = NULL;
+void view_destroy() {
+    if (!isendwin())
+        check_b(ERR != endwin(), "end ncurses");
 }

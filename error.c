@@ -5,18 +5,23 @@
 #include <string.h>
 
 #include "error.h"
+#include "view.h"
 
 bool check_c(int result, const char *action) {
-    if (result)
+    if (result) {
+        view_destroy();
         fprintf(stderr, "Failed to %s (%d, %d: %s)\n",
                 action, result, errno, strerror(errno));
+    }
     return result == 0;
 }
 
 bool check_b(bool result, const char *action) {
-    if (!result)
+    if (!result) {
+        view_destroy();
         fprintf(stderr, "Failed to %s (%d: %s)\n",
                 action, errno, strerror(errno));
+    }
     return result;
 }
 

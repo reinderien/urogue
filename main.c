@@ -4,16 +4,14 @@
 #include "mobs.h"
 #include "view.h"
 
-static View *view = NULL;
-
 static void exitHook() {
-    view_destroy(&view);
+    view_destroy();
 }
 
 int main(int argc, const char **argv) {
     assert_c(atexit(exitHook), "register exit hook");
 
-    view = view_init();
+    view_init();
 
     return 0;
 }

@@ -5,7 +5,7 @@ export
 # For HomeBrew compatibility
 pkgenv=PKG_CONFIG_PATH=/usr/local/opt/ncurses/lib/pkgconfig pkg-config ncursesw
 
-flags=-Wall -std=c17
+flags=-Wall -std=c17 -ggdb
 cflags=$(flags) $(shell $(pkgenv) --cflags)
 ldflags=$(flags) $(shell $(pkgenv) --libs)
 
