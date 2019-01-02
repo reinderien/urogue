@@ -11,7 +11,7 @@ ldflags=$(flags) $(shell $(pkgenv) --libs)
 
 all: urogue
 
-urogue: main.o mobs.o view.o
+urogue: error.o main.o mobs.o view.o
 	gcc -o $@ $^ $$ldflags
 
 %.o: %.d
@@ -20,7 +20,7 @@ urogue: main.o mobs.o view.o
 %.d: %.c makefile
 	gcc -o $@ $< $$cflags -M
 
--include main.d mobs.d view.d
+-include error.d main.d mobs.d view.d
 
 clean:
 	rm -f *.o *.d urogue

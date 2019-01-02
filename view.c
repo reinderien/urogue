@@ -3,7 +3,10 @@
 #include <stdlib.h>
 #include <ncursesw/ncurses.h>
 
+#include "error.h"
 #include "view.h"
+
+#define INVIS_CUR 0
 
 struct View_tag {
     WINDOW *win;
@@ -11,35 +14,26 @@ struct View_tag {
 
 View *view_init() {
     View *v = malloc(sizeof(View));
-    if (!v) {
-        perror("Failed to allocate view struct");
-        exit(ENOMEM);
-    }
+    assert_p(v, "allocate view struct");
 
     // Set entire locale based on environment
     // Recommended by man ncurses(3X)
     setlocale(LC_ALL, "");
 
     v->win = initscr();
-    if (!v->win) {
-        perror("Failed to start ncurses");
-        exit(errno);
-    }
+    assert_p(v->win, "start ncurses");
 
-    if (cbreak() || // disable buffering, immediate input
-        noecho() || // don't echo user input
-        nonl()   || // disable newline translation
-        keypad(v->win, true) // enable translation of arrow keys
-    ) {
-        perror("Failed to configure ncurses");
-        exit(errno);
-    }
+    assert_b(ERR != start_color(), "enable colour mode");
+    assert_b(ERR != cbreak(), "disable buffering for immediate input");
+    assert_b(ERR != noecho(), "disable user input echo");
+    assert_b(ERR != nonl(), "disable newline translation");
+    assert_b(ERR != curs_set(INVIS_CUR), "hide the cursor");
+    assert_b(ERR != keypad(v->win, true), "enable translation of arrow keys");
 
     return v;
 }
 
 void view_destroy(View *v) {
-    if (endwin())
-        perror("Warning: failed to end ncurses");
+    check_b(ERR != endwin(), "end ncurses");
     free(v);
 }
