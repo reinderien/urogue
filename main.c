@@ -1,7 +1,6 @@
-#include <errno.h>
-#include <stdio.h>
 #include <stdlib.h>
 
+#include "error.h"
 #include "mobs.h"
 #include "view.h"
 
@@ -12,10 +11,7 @@ static void exitHook() {
 }
 
 int main(int argc, const char **argv) {
-    if (atexit(exitHook)) {
-        perror("Failed to register exit hook");
-        return errno;
-    }
+    assert_c(atexit(exitHook), "register exit hook");
 
     view = view_init();
 
