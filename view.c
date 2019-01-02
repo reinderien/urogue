@@ -18,7 +18,7 @@ View *view_init() {
 
     // Set entire locale based on environment
     // Recommended by man ncurses(3X)
-    setlocale(LC_ALL, "");
+    assert_p(setlocale(LC_ALL, ""), "set the locale");
 
     v->win = initscr();
     assert_p(v->win, "start ncurses");
