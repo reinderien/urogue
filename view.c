@@ -34,9 +34,7 @@ View *view_init() {
 }
 
 void view_destroy(View **v) {
-    if (*v) {
-        check_b(ERR != endwin(), "end ncurses");
-        free(*v);
-        *v = NULL;
-    }
+    check_b(ERR != endwin(), "end ncurses");
+    free(*v);
+    *v = NULL;
 }
