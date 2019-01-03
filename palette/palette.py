@@ -2,6 +2,19 @@
 
 from PIL import Image
 
+def palette(lims):
+    rm, gm, bm = lims
+    im = Image.new('RGB', (gm, (rm+1)*bm))
+    for r in range(rm):
+        for g in range(gm):
+            for b in range(bm):
+                x = g
+                y = r + (1+rm)*b
+                colour = tuple(int(256*v/m)
+                               for v, m in zip((r,g,b), lims))
+                im.putpixel((x, y), colour)
+    return im
+
 def equal():
     """
     Here, we only support 256 or greater colour indices. If
@@ -10,16 +23,14 @@ def equal():
        2^(8/3) ~ 6.3
        6^3 = 216
     """
-    im = Image.new('RGB', (6, 6*7))
-    scale = 255/5
-    for r in range(6):
-        for g in range(6):
-            for b in range(6):
-                x = r
-                y = g + 7*b
-                colour = tuple(int(scale*v) for v in (r,g,b))
-                im.putpixel((x, y), colour)
-    return im
+    return palette((6, 6, 6))
+
+def green676():
+    """
+    Similar to equal, but use 7 values on the green axis; total values 6*7*6
+    = 252
+    """
+    return palette((6, 7, 6))
 
 def bitwise():
     """
@@ -29,17 +40,6 @@ def bitwise():
        8/3 = 2.7
        8 = 3 + 3 + 2
     """
-    lims = 8, 8, 4
-    rm, gm, bm = lims
-    im = Image.new('RGB', (rm, (gm+1)*bm))
-    for r in range(rm):
-        for g in range(gm):
-            for b in range(bm):
-                x = r
-                y = g + (1+gm)*b
-                colour = tuple(int(255*v/(m-1.))
-                               for v, m in zip((r,g,b), lims))
-                im.putpixel((x, y), colour)
-    return im
+    return palette((8, 8, 4))
 
-bitwise().save('palette.png')
+green676().save('palette.png')
