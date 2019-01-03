@@ -2,44 +2,45 @@
 
 from PIL import Image
 
-def palette(lims):
-    rm, gm, bm = lims
+def pal_colours(*args, pm):
+    rm, gm, bm = args
+
+    for p in range(rm*gm*bm):
+        ri =  p             % rm
+        gi = (p //  rm    ) % gm
+        bi = (p // (rm*gm)) % bm
+        r = pm * ri // (rm-1)
+        g = pm * gi // (gm-1)
+        b = pm * bi // (bm-1)
+        yield ri, gi, bi, r, g, b
+
+def pal_image(*args):
+    rm, gm, bm = args
     im = Image.new('RGB', (gm, (rm+1)*bm))
-    for r in range(rm):
-        for g in range(gm):
-            for b in range(bm):
-                x = g
-                y = r + (1+rm)*b
-                colour = tuple(int(256*v/m)
-                               for v, m in zip((r,g,b), lims))
-                im.putpixel((x, y), colour)
+    for ri, gi, bi, r, g, b in pal_colours(*args, pm=255):
+        x = gi
+        y = ri + (1+rm)*bi
+        im.putpixel((x, y), (r, g, b))
     return im
 
-def equal():
-    """
-    Here, we only support 256 or greater colour indices. If
-    we support even distribution of channels,
+def pal_dump(*args):
+    rm, gm, bm = args
+    pm = 1000
+    for p, colours in zip(range(rm*gm*bm), pal_colours(*args, pm=pm)):
+        r, g, b = colours[3:]
+        pt = (
+             r    * (rm-1)         +
+            (g+1) * (gm-1) * rm    +
+             b    * (bm-1) * rm*gm
+        ) // pm
 
-       2^(8/3) ~ 6.3
-       6^3 = 216
-    """
-    return palette((6, 6, 6))
+        assert(p == pt)
 
-def green676():
-    """
-    Similar to equal, but use 7 values on the green axis; total values 6*7*6
-    = 252
-    """
-    return palette((6, 7, 6))
+        print('%3d %4d %4d %4d' % (p, r, g, b))
 
-def bitwise():
-    """
-    Here, rather than an equal distribution of 6 values per channel, we find the
-    number of bits allocatable for each division then make a compromise:
-
-       8/3 = 2.7
-       8 = 3 + 3 + 2
-    """
-    return palette((8, 8, 4))
-
-green676().save('palette.png')
+# Alternatives:
+# 6, 6, 6 - perfect uniformity but poor usage
+# 8, 8, 4 - perfect usage but poor uniformity
+test_colours = 6, 7, 6
+pal_image(*test_colours).save('palette.png')
+pal_dump(*test_colours)
