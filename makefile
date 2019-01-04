@@ -1,4 +1,4 @@
-#!/usr/bin/env make -f
+#!/usr/bin/env make -j -f
 
 export
 
@@ -8,6 +8,8 @@ pkgenv=PKG_CONFIG_PATH=/usr/local/opt/ncurses/lib/pkgconfig pkg-config ncursesw
 flags=-Wall -std=c17 -ggdb
 cflags=$(flags) $(shell $(pkgenv) --cflags)
 ldflags=$(flags) $(shell $(pkgenv) --libs)
+
+.PHONY: all clean
 
 all: urogue
 
