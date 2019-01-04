@@ -11,8 +11,8 @@ bool check_c(int result, const char *action) {
     if (!result)
         return true;
     view_destroy();
-    fprintf(stderr, "Failed to %s (%d, %d: %s)\n",
-            action, result, errno, strerror(errno));
+    fprintf(stderr, "Failed to %s (C %d: %s)\n",
+            action, result, strerror(errno));
     return false;
 }
 
@@ -20,8 +20,8 @@ bool check_b(bool result, const char *action) {
     if (result)
         return true;
     view_destroy();
-    fprintf(stderr, "Failed to %s (%d: %s)\n",
-            action, errno, strerror(errno));
+    fprintf(stderr, "Failed to %s (C %s)\n",
+            action, strerror(errno));
     return false;
 }
 
