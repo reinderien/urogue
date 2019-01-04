@@ -8,21 +8,25 @@
 #include "view.h"
 
 bool check_c(int result, const char *action) {
-    if (result) {
-        view_destroy();
-        fprintf(stderr, "Failed to %s (%d, %d: %s)\n",
-                action, result, errno, strerror(errno));
-    }
-    return result == 0;
+    if (!result)
+        return true;
+    view_destroy();
+    fprintf(stderr, "Failed to %s (%d, %d: %s)\n",
+            action, result, errno, strerror(errno));
+    return false;
 }
 
 bool check_b(bool result, const char *action) {
-    if (!result) {
-        view_destroy();
-        fprintf(stderr, "Failed to %s (%d: %s)\n",
-                action, errno, strerror(errno));
-    }
-    return result;
+    if (result)
+        return true;
+    view_destroy();
+    fprintf(stderr, "Failed to %s (%d: %s)\n",
+            action, errno, strerror(errno));
+    return false;
+}
+
+bool check_n(int result, const char *action) {
+    return check_b(result != -1, action);
 }
 
 bool check_p(void *p, const char *action) {
@@ -31,6 +35,11 @@ bool check_p(void *p, const char *action) {
 
 void assert_c(int result, const char *action) {
     if (!check_c(result, action))
+        exit(errno);
+}
+
+void assert_n(int result, const char *action) {
+    if (!check_n(result, action))
         exit(errno);
 }
 
