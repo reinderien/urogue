@@ -35,6 +35,9 @@ void view_init() {
     assert_p(view.win, "start ncurses");
 
     assert_n(start_color(), "enable colour mode");
+    assert_b(has_colors(), "check color support");
+    assert_b(can_change_color(), "check color change support");
+
     assert_n(cbreak(), "disable buffering for immediate input");
     assert_n(noecho(), "disable user input echo");
     assert_n(nonl(), "disable newline translation");
@@ -53,6 +56,17 @@ static void wave() {
     // Draw an animated wave emanating from the center outwards, and filling
     // from black to a grey pattern
 
+    assert_n(wmove(view.win, 0, 0), "move cur");
+    for (NCURSES_COLOR_T c = 0; c < 256; c++) {
+        NCURSES_COLOR_T f = c,
+                        b = c,
+                        p = c+1;
+        assert_n(init_pair(p, f, b), "init scale pair");
+        assert_n(wattron(view.win, COLOR_PAIR(p)), "set attr");
+        assert_n(waddch(view.win, 'X'), "output char");
+    }
+
+    /*
     const int off = 2; // Offset between fore and back
     // Black through blue through white
     const NCURSES_COLOR_T scale[] = {
@@ -91,7 +105,7 @@ static void wave() {
         assert_n(wattron(view.win, COLOR_PAIR(pairs[i])), "switch colour");
         assert_n(waddch(view.win, 'X'), "output char");
     }
-
+    */
     // write a char to the screen with mvwaddch
     // (int) mvwaddch (WINDOW *, int, int, const chtype);	/* generated */
 }
