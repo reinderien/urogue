@@ -1,11 +1,21 @@
 #!/usr/bin/env make -j -f
 
+# Requirements:
+#   Ubuntu
+#     apt install libncursesw5-dev
+#   OSX
+#     brew install ncurses
+
 export
 
 # For HomeBrew compatibility
-pkgenv=PKG_CONFIG_PATH=/usr/local/opt/ncurses/lib/pkgconfig pkg-config ncursesw
+ifeq ($(shell uname),Darwin)
+	pkgpath=PKG_CONFIG_PATH=/usr/local/opt/ncurses/lib/pkgconfig
+endif
 
-flags=-Wall -std=c17 -ggdb
+pkgenv=$(pkgpath) pkg-config ncursesw
+
+flags=-Wall -std=c11 -ggdb
 cflags=$(flags) $(shell $(pkgenv) --cflags)
 ldflags=$(flags) $(shell $(pkgenv) --libs)
 
