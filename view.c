@@ -15,7 +15,7 @@ struct {
 static void init_palette() {
     const unsigned pm = 1000; // Resolution of ncurses colours
 
-    assert_b(COLOR_PAIRS >= 0x10000, "support enough colour pairs");
+    assert_b(COLOR_PAIRS >= 256, "support enough colour pairs");
     assert_b(COLORS >= PALSIZE, "support enough colours");
 
     for (unsigned p = 0; p < PALSIZE; p++) {
