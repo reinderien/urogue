@@ -17,12 +17,17 @@ def pal_colours(*args, pm):
         b = pm * bi // (bm-1)
         yield ri, gi, bi, r, g, b
 
-def pal_image(*args):
+def pal_image(*args, folded):
     rm, gm, bm = args
-    im = Image.new('RGB', ((bm+1)*gm, rm))
+    w = gm*bm
+    h = rm
+    im = Image.new('RGB', (w, h))
     for ri, gi, bi, r, g, b in pal_colours(*args, pm=255):
         y = ri
-        x = bi + (1+bm)*gi
+        if folded and gi%2:
+            x = (gi+1)*bm - bi - 1
+        else:
+            x = gi*bm + bi
         im.putpixel((x, y), (r, g, b))
     return im
 
@@ -48,5 +53,6 @@ def pal_dump(*args):
 # 666 - perfect uniformity but poor usage
 # Used by https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
 test_depths = 6, 6, 6
-pal_image(*test_depths).save('palette.png')
+pal_image(*test_depths, folded=False).save('palette-separated.png')
+pal_image(*test_depths, folded=True).save('palette-folded.png')
 pal_dump(*test_depths)
