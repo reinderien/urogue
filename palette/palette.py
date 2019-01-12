@@ -19,7 +19,7 @@ def pal_colours(*args, pm):
 
 def pal_image(*args):
     rm, gm, bm = args
-    im = Image.new('RGB', ((rm+1)*gm, bm))
+    im = Image.new('RGB', ((bm+1)*gm, rm))
     for ri, gi, bi, r, g, b in pal_colours(*args, pm=255):
         y = ri
         x = bi + (1+bm)*gi
@@ -32,21 +32,21 @@ def pal_dump(*args):
     for p, colours in zip(range(rm*gm*bm), pal_colours(*args, pm=pm)):
         r, g, b = colours[3:]
         pt = (
-             b    * (bm-1)         +
-            (r+1) * (rm-1) * bm    +
-             g    * (gm-1) * bm*rm
+             b * (bm-1)         +
+             r * (rm-1) * bm    +
+             g * (gm-1) * bm*rm
         ) // pm
 
-        assert(p == pt)
+        print('%3d %3d %4d %4d %4d' % (p, pt, r, g, b))
+        # assert(p == pt)
 
-        print('%3d %4d %4d %4d' % (p, r, g, b))
 
 # Alternatives:
-# 8, 8, 4 - perfect usage but poor uniformity
-# 6, 7, 6 - good balance of uniformity and usage
+# 884 or 488 - perfect usage but poor uniformity
+# 676 - good balance of uniformity and usage
 
-# 6, 6, 6 - perfect uniformity but poor usage
+# 666 - perfect uniformity but poor usage
 # Used by https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
-test_colours = 6, 6, 6
-pal_image(*test_colours).save('palette.png')
-pal_dump(*test_colours)
+test_depths = 6, 6, 6
+pal_image(*test_depths).save('palette.png')
+pal_dump(*test_depths)
