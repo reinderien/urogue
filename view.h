@@ -1,19 +1,15 @@
 #pragma once
 
-// Channel resolutions for palette
-#define RRES 6
-#define GRES 7
-#define BRES 6
-#define PALSIZE (RRES*GRES*BRES)
+// Use default palette from
+// https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
 
 // Colour components to palette index
-// 0 <= R < RRES
-// 0 <= G < GRES
-// 0 <= B < BRES
-#define C2P(r, g, b) (r + (g)*RRES + (b)*RRES*GRES)
+// 0 <= R, G, B < 6
+#define RGB2P(r, g, b) (16 + (b) + (g)*6 + (r)*6*6)
 
-// Form a pair ID from back and fore palette indices
-#define FBPAIR(f, b) (1 + f + PALSIZE*(b))
+// Greyscale to palette index
+// 0 <= w < 24
+#define GS2P(w) (232 + (w))
 
 void view_init();
 void view_destroy();
