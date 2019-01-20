@@ -11,6 +11,9 @@
 
 #define INVIS_CUR 0   // For curs_set
 
+// Character aspect ratio. This is basically a guess
+#define ASPECT 0.5
+
 // See https://www.gnu.org/software/libc/manual/html_node/Floating-Point-Parameters.html
 #define FLT_ROUNDS_NEAREST 1
 
@@ -110,10 +113,10 @@ static void wave_explode(NCURSES_PAIRS_T wo, int wn, int Y, int X) {
         t = timeDelta(start, prev)/trun;
 
         for (int y = 0; y < Y; y++) {
-            // Normalize coordinates, center
-            float yn = (y - Y/2)/size;
+            // Normalize coordinates, center, correct for aspect ratio
+            float yn = (y - Y/2.)/size;
             for (int x = 0; x < X; x++) {
-                float xn = (x - X/2)/size,
+                float xn = (x - X/2.)/size * ASPECT,
                       r = sqrt(xn*xn + yn*yn)/t,
                       z;
                 if (r > M_PI)
