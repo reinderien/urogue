@@ -76,7 +76,7 @@ static void wave_palette(NCURSES_PAIRS_T *po, int *pn,
 }
 
 static float timeDelta(struct timespec t1, struct timespec t2) {
-    return t2.tv_sec - t1.tv_sec + 1e9*(t2.tv_nsec - t1.tv_nsec);
+    return t2.tv_sec - t1.tv_sec + 1e-9*(t2.tv_nsec - t1.tv_nsec);
 }
 
 static void wave_point(NCURSES_PAIRS_T po, int pn, int Y, int X) {
