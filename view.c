@@ -1,13 +1,18 @@
-#include <errno.h>
-#include <locale.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <float.h>     // FLT_ROUNDS
+#include <locale.h>    // setlocale
+#include <math.h>      // sin
+#include <sys/param.h> // MIN/MAX
+#include <time.h>      // clock_gettime
+#include <unistd.h>    // usleep
 #include <ncursesw/ncurses.h>
 
 #include "error.h"
 #include "view.h"
 
-#define INVIS_CUR 0
+#define INVIS_CUR 0   // For curs_set
+
+// See https://www.gnu.org/software/libc/manual/html_node/Floating-Point-Parameters.html
+#define FLT_ROUNDS_NEAREST 1
 
 struct {
     WINDOW *win;
@@ -38,7 +43,8 @@ void view_destroy() {
         check_n(endwin(), "end ncurses");
 }
 
-static void wave_palette(int *po, int *pn, int *wo, int *wn) {
+static void wave_palette(NCURSES_PAIRS_T *po, int *pn,
+                         NCURSES_PAIRS_T *wo, int *wn) {
     // Black through blue through white
     const int N = 2*NC - 1; // number of colours
     NCURSES_COLOR_T scale[N];
@@ -69,17 +75,12 @@ static void wave_palette(int *po, int *pn, int *wo, int *wn) {
     }
 }
 
-static void wave() {
-    // Draw an animated wave emanating from the center outwards, and filling
-    // from black to a grey pattern
+static float timeDelta(struct timespec t1, struct timespec t2) {
+    return t2.tv_sec - t1.tv_sec + 1e9*(t2.tv_nsec - t1.tv_nsec);
+}
 
-    int po, pn, wo, wn; // point offset+count; wave offset+count
-    wave_palette(&po, &pn, &wo, &wn);
-
-    int Y, X;
-    getmaxyx(view.win, Y, X);
+static void wave_point(NCURSES_PAIRS_T po, int pn, int Y, int X) {
     const int ym = Y/2, xm = X/2;
-    // assert_n(wmove(view.win, ym, xm), "move cur");
 
     for (int c = 0; c < pn; c++) {
         assert_n(wattron(view.win, COLOR_PAIR(c + po)), "switch colour");
@@ -87,6 +88,73 @@ static void wave() {
         assert_n(wrefresh(view.win), "refresh");
         assert_c(usleep(200000), "usleep");
     }
+}
+
+static void wave_explode(NCURSES_PAIRS_T wo, int wn, int Y, int X) {
+    // Radially symmetrical, piecewise sine
+    const float fmax = 30,     // max update freq
+                tmin = 1/fmax, // min update period
+                trun = 6;      // total run time
+    struct timespec start, prev;
+    assert_c(clock_gettime(CLOCK_MONOTONIC, &start), "get time");
+    prev = start;
+
+    const float size = MIN(X, Y), // smallest screen dimension
+                final = 0.3;      // final z level after wave settle
+
+    // Otherwise lrintf won't behave like we expect
+    assert_b(FLT_ROUNDS == FLT_ROUNDS_NEAREST, "support float rounding");
+
+    float t;
+    do {
+        t = timeDelta(start, prev)/trun;
+
+        for (int y = 0; y < Y; y++) {
+            // Normalize coordinates, center
+            float yn = (y/size - 0.5);
+            for (int x = 0; x < X; x++) {
+                float xn = (x/size - 0.5),
+                      r = sqrt(xn*xn + yn*yn)/t,
+                      z;
+                if (r > M_PI)
+                    z = 0;
+                else {
+                    z = sin(r);
+                    if (r < M_PI_2)
+                        z = z*(1 - final) + final;
+                }
+
+                NCURSES_PAIRS_T c = wo + lrintf(z*(wn - 1));
+
+                assert_n(mvwchgat(view.win, y, x, 1, A_NORMAL, c, NULL),
+                         "change colour");
+            }
+        }
+        assert_n(wrefresh(view.win), "refresh");
+
+        struct timespec now;
+        assert_c(clock_gettime(CLOCK_MONOTONIC, &now), "get time");
+        float remain = tmin - timeDelta(prev, now);
+        if (remain > 0)
+            assert_c(usleep(1e6*remain), "usleep");
+        prev = now;
+
+    } while (t < 1);
+}
+
+static void wave() {
+    // Draw an animated wave emanating from the center outwards, and filling
+    // from black to a grey pattern
+
+    NCURSES_PAIRS_T po, wo; // point and wave offsets
+    int pn, wn;             // point and wave counts
+    wave_palette(&po, &pn, &wo, &wn);
+
+    int Y, X;
+    getmaxyx(view.win, Y, X);
+
+    wave_point(po, pn, Y, X);
+    wave_explode(wo, wn, Y, X);
 }
 
 void view_splash() {
