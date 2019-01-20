@@ -42,29 +42,27 @@ static void wave() {
     // from black to a grey pattern
 
     // Black through blue through white
-    const int N = 11; // number of colours
+    const int N = 2*NC - 1; // number of colours
     NCURSES_COLOR_T scale[N];
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < NC; i++)
         scale[i] = RGB2P(0, 0, i);
-    for (int i = 6; i < N; i++)
-        scale[i] = RGB2P(i-5, i-5, 5);
+    for (int i = NC; i < N; i++)
+        scale[i] = RGB2P(i-NC+1, i-NC+1, NC-1);
 
     // Set up pairs
     const int off = 2,     // offset between fore and back
               P = N - off; // number of pairs
-    NCURSES_COLOR_T pairs[P];
     for (int i = 0; i < P; i++) {
         NCURSES_COLOR_T b = scale[i],     // back
                         f = scale[i+off], // fore
                         p = i+1;          // pair ID
-        pairs[i] = p;
         assert_n(init_pair(p, f, b), "init pair");
     }
 
     // Test output
     assert_n(wmove(view.win, 0, 0), "move cur");
     for (int i = 0; i < P; i++) {
-        assert_n(wattron(view.win, COLOR_PAIR(pairs[i])), "switch colour");
+        assert_n(wattron(view.win, COLOR_PAIR(i+1)), "switch colour");
         assert_n(waddch(view.win, 'X'), "output char");
     }
 }
