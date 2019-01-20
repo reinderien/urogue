@@ -1,7 +1,7 @@
 #include <float.h>     // FLT_ROUNDS
 #include <locale.h>    // setlocale
-#include <math.h>      // sin
-#include <sys/param.h> // MIN/MAX
+#include <math.h>      // sin, sqrt, etc.
+#include <sys/param.h> // MIN, MAX
 #include <time.h>      // clock_gettime
 #include <unistd.h>    // usleep
 #include <ncursesw/ncurses.h>
@@ -20,6 +20,11 @@
 struct {
     WINDOW *win;
 } static view;
+
+
+static float timeDelta(struct timespec t1, struct timespec t2) {
+    return t2.tv_sec - t1.tv_sec + 1e-9*(t2.tv_nsec - t1.tv_nsec);
+}
 
 void view_init() {
     // Set entire locale based on environment
@@ -67,7 +72,7 @@ static void wave_palette(NCURSES_PAIRS_T *po, int *pn,
     }
 
     // Set up pairs for "wave"
-    const int off = 2; // offset between fore and back
+    const int off = 1; // offset between fore and back
     *wo = *po + *pn;   // wave pair offset
     *wn = N - off;     // wave pair count
     for (int i = 0; i < *wn; i++) {
@@ -76,10 +81,6 @@ static void wave_palette(NCURSES_PAIRS_T *po, int *pn,
         NCURSES_PAIRS_T p = i + *wo;      // pair ID
         assert_n(init_pair(p, f, b), "init pair");
     }
-}
-
-static float timeDelta(struct timespec t1, struct timespec t2) {
-    return t2.tv_sec - t1.tv_sec + 1e-9*(t2.tv_nsec - t1.tv_nsec);
 }
 
 static void wave_point(NCURSES_PAIRS_T po, int pn, int Y, int X) {
@@ -95,15 +96,16 @@ static void wave_point(NCURSES_PAIRS_T po, int pn, int Y, int X) {
 
 static void wave_explode(NCURSES_PAIRS_T wo, int wn, int Y, int X) {
     // Radially symmetrical, piecewise sine
-    const float fmax = 30,     // max update freq
-                tmin = 1/fmax, // min update period
-                trun = 6;      // total run time
+    const float fmax = 30,        // max update freq
+                tmin = 1/fmax,    // min update period
+                trun = 6,         // total run time, s
+                tfac = 16,        // time scale factor
+                size = MIN(X, Y), // smallest screen dimension
+                final = 0.3;      // final z level after wave settle
+
     struct timespec start, prev;
     assert_c(clock_gettime(CLOCK_MONOTONIC, &start), "get time");
     prev = start;
-
-    const float size = MIN(X, Y), // smallest screen dimension
-                final = 0.3;      // final z level after wave settle
 
     // Otherwise lrintf won't behave like we expect
     assert_b(FLT_ROUNDS == FLT_ROUNDS_NEAREST, "support float rounding");
@@ -114,10 +116,10 @@ static void wave_explode(NCURSES_PAIRS_T wo, int wn, int Y, int X) {
 
         for (int y = 0; y < Y; y++) {
             // Normalize coordinates, center, correct for aspect ratio
-            float yn = (y - Y/2.)/size;
+            float yn = (y - Y/2.)/size / ASPECT;
             for (int x = 0; x < X; x++) {
-                float xn = (x - X/2.)/size * ASPECT,
-                      r = sqrt(xn*xn + yn*yn)/t,
+                float xn = (x - X/2.)/size,
+                      r = sqrt(xn*xn + yn*yn)/t / tfac,
                       z;
                 if (r > M_PI)
                     z = 0;
