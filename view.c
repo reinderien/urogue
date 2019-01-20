@@ -111,9 +111,9 @@ static void wave_explode(NCURSES_PAIRS_T wo, int wn, int Y, int X) {
 
         for (int y = 0; y < Y; y++) {
             // Normalize coordinates, center
-            float yn = (y/size - 0.5);
+            float yn = (y - Y/2)/size;
             for (int x = 0; x < X; x++) {
-                float xn = (x/size - 0.5),
+                float xn = (x - X/2)/size,
                       r = sqrt(xn*xn + yn*yn)/t,
                       z;
                 if (r > M_PI)
