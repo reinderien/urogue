@@ -52,13 +52,14 @@ void view_destroy() {
         check_n(endwin(), "end ncurses");
 }
 
-static void noise(NCURSES_PAIRS_T wo, NCURSES_SIZE_T Y, NCURSES_SIZE_T X) {
+static void noise(NCURSES_SIZE_T Y, NCURSES_SIZE_T X) {
     // Fill screen with random characters
-    assert_n(wcolor_set(view.win, wo, NULL), "set initial color");
     assert_n(wmove(view.win, 0, 0), "move cursor home");
 
+    const char cmin = '!', cmax = '~';
+
     for (int i = 0; i < X*Y - 1; i++) {
-        char c = '!' + rand()%('~' - '!' + 1);
+        char c = cmin + rand()%(cmax - cmin + 1);
         assert_n(waddch(view.win, c), "output char");
     }
 }
@@ -116,7 +117,7 @@ static void wave_explode(NCURSES_PAIRS_T wo, NCURSES_PAIRS_T wn,
                 trun = 3,         // total run time, s
                 tfac = 16,        // time scale factor
                 size = MIN(X, Y), // smallest screen dimension in chars
-                final = 0.3;      // final z level after wave settle
+                final = 0.1;      // final z level after wave settle
 
     // Otherwise lrintf won't behave like we expect
     assert_b(FLT_ROUNDS == FLT_ROUNDS_NEAREST, "support float rounding");
@@ -174,7 +175,7 @@ static void wave() {
                          X = getmaxx(view.win);
 
     wave_point(po, pn, Y, X);
-    noise(wo, Y, X);
+    noise(Y, X);
     wave_explode(wo, wn, Y, X);
 }
 
