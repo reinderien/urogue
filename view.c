@@ -51,8 +51,8 @@ void view_destroy() {
         check_n(endwin(), "end ncurses");
 }
 
-static void wave_palette(NCURSES_PAIRS_T *po, int *pn,
-                         NCURSES_PAIRS_T *wo, int *wn) {
+static void wave_palette(NCURSES_PAIRS_T *po, NCURSES_PAIRS_T *pn,
+                         NCURSES_PAIRS_T *wo, NCURSES_PAIRS_T *wn) {
     // Black through blue through white
     const int N = 2*NC - 1; // number of colours
     NCURSES_COLOR_T scale[N];
@@ -64,7 +64,7 @@ static void wave_palette(NCURSES_PAIRS_T *po, int *pn,
     // Set up pairs for "point"
     *po = 1; // point pair offset
     *pn = N; // point pair count
-    for (int i = 0; i < *pn; i++) {
+    for (NCURSES_PAIRS_T i = 0; i < *pn; i++) {
         NCURSES_COLOR_T b = scale[0], // back
                         f = scale[i]; // fore
         NCURSES_PAIRS_T p = i + *po;  // pair ID
@@ -72,10 +72,10 @@ static void wave_palette(NCURSES_PAIRS_T *po, int *pn,
     }
 
     // Set up pairs for "wave"
-    const int off = 1; // offset between fore and back
-    *wo = *po + *pn;   // wave pair offset
-    *wn = N - off;     // wave pair count
-    for (int i = 0; i < *wn; i++) {
+    const NCURSES_PAIRS_T off = 1; // offset between fore and back
+    *wo = *po + *pn;               // wave pair offset
+    *wn = N - off;                 // wave pair count
+    for (NCURSES_PAIRS_T i = 0; i < *wn; i++) {
         NCURSES_COLOR_T b = scale[i],     // back
                         f = scale[i+off]; // fore
         NCURSES_PAIRS_T p = i + *wo;      // pair ID
@@ -83,41 +83,45 @@ static void wave_palette(NCURSES_PAIRS_T *po, int *pn,
     }
 }
 
-static void wave_point(NCURSES_PAIRS_T po, int pn, int Y, int X) {
-    const int ym = Y/2, xm = X/2;
+static void wave_point(NCURSES_PAIRS_T po, NCURSES_PAIRS_T pn,
+                       NCURSES_SIZE_T Y, NCURSES_SIZE_T X) {
+    const NCURSES_SIZE_T ym = Y/2, xm = X/2;
 
-    for (int c = 0; c < pn; c++) {
+    for (NCURSES_PAIRS_T c = 0; c < pn; c++) {
         assert_n(wattron(view.win, COLOR_PAIR(c + po)), "switch colour");
         assert_n(mvwaddch(view.win, ym, xm, '.'), "output char");
         assert_n(wrefresh(view.win), "refresh");
-        assert_c(usleep(200000), "usleep");
+        assert_c(usleep(100000), "usleep");
     }
 }
 
-static void wave_explode(NCURSES_PAIRS_T wo, int wn, int Y, int X) {
+static void wave_explode(NCURSES_PAIRS_T wo, NCURSES_PAIRS_T wn,
+                         NCURSES_SIZE_T Y, NCURSES_SIZE_T X) {
     // Radially symmetrical, piecewise sine
-    const float fmax = 30,        // max update freq
-                tmin = 1/fmax,    // min update period
-                trun = 6,         // total run time, s
+    // Increasing the frequency any further causes page tearing.
+    const float fmax = 20,        // max update freq, Hz
+                tmin = 1/fmax,    // min update period, s
+                trun = 3,         // total run time, s
                 tfac = 16,        // time scale factor
-                size = MIN(X, Y), // smallest screen dimension
+                size = MIN(X, Y), // smallest screen dimension in chars
                 final = 0.3;      // final z level after wave settle
-
-    struct timespec start, prev;
-    assert_c(clock_gettime(CLOCK_MONOTONIC, &start), "get time");
-    prev = start;
 
     // Otherwise lrintf won't behave like we expect
     assert_b(FLT_ROUNDS == FLT_ROUNDS_NEAREST, "support float rounding");
 
+    struct timespec start;
+    assert_c(clock_gettime(CLOCK_MONOTONIC, &start), "get time");
+
     float t;
     do {
-        t = timeDelta(start, prev)/trun;
+        struct timespec frame_start;
+        assert_c(clock_gettime(CLOCK_MONOTONIC, &frame_start), "get time");
+        t = timeDelta(start, frame_start)/trun;
 
-        for (int y = 0; y < Y; y++) {
+        for (NCURSES_SIZE_T y = 0; y < Y; y++) {
             // Normalize coordinates, center, correct for aspect ratio
             float yn = (y - Y/2.)/size / ASPECT;
-            for (int x = 0; x < X; x++) {
+            for (NCURSES_SIZE_T x = 0; x < X; x++) {
                 float xn = (x - X/2.)/size,
                       r = sqrt(xn*xn + yn*yn)/t / tfac,
                       z;
@@ -137,26 +141,25 @@ static void wave_explode(NCURSES_PAIRS_T wo, int wn, int Y, int X) {
         }
         assert_n(wrefresh(view.win), "refresh");
 
-        struct timespec now;
-        assert_c(clock_gettime(CLOCK_MONOTONIC, &now), "get time");
-        float remain = tmin - timeDelta(prev, now);
+        struct timespec frame_mid;
+        assert_c(clock_gettime(CLOCK_MONOTONIC, &frame_mid), "get time");
+        float remain = tmin - timeDelta(frame_start, frame_mid);
         if (remain > 0)
             assert_c(usleep(1e6*remain), "usleep");
-        prev = now;
 
     } while (t < 1);
 }
 
 static void wave() {
     // Draw an animated wave emanating from the center outwards, and filling
-    // from black to a grey pattern
+    // from black to a blue pattern
 
-    NCURSES_PAIRS_T po, wo; // point and wave offsets
-    int pn, wn;             // point and wave counts
+    NCURSES_PAIRS_T po, wo, // point and wave offsets
+                    pn, wn; // point and wave counts
     wave_palette(&po, &pn, &wo, &wn);
 
-    int Y, X;
-    getmaxyx(view.win, Y, X);
+    const NCURSES_SIZE_T Y = getmaxy(view.win),
+                         X = getmaxx(view.win);
 
     wave_point(po, pn, Y, X);
     wave_explode(wo, wn, Y, X);
