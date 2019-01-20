@@ -1,6 +1,7 @@
 #include <float.h>     // FLT_ROUNDS
 #include <locale.h>    // setlocale
 #include <math.h>      // sin, sqrt, etc.
+#include <stdlib.h>    // rand
 #include <sys/param.h> // MIN, MAX
 #include <time.h>      // clock_gettime
 #include <unistd.h>    // usleep
@@ -49,6 +50,17 @@ void view_init() {
 void view_destroy() {
     if (!isendwin())
         check_n(endwin(), "end ncurses");
+}
+
+static void noise(NCURSES_PAIRS_T wo, NCURSES_SIZE_T Y, NCURSES_SIZE_T X) {
+    // Fill screen with random characters
+    assert_n(wcolor_set(view.win, wo, NULL), "set initial color");
+    assert_n(wmove(view.win, 0, 0), "move cursor home");
+
+    for (int i = 0; i < X*Y - 1; i++) {
+        char c = '!' + rand()%('~' - '!' + 1);
+        assert_n(waddch(view.win, c), "output char");
+    }
 }
 
 static void wave_palette(NCURSES_PAIRS_T *po, NCURSES_PAIRS_T *pn,
@@ -162,6 +174,7 @@ static void wave() {
                          X = getmaxx(view.win);
 
     wave_point(po, pn, Y, X);
+    noise(wo, Y, X);
     wave_explode(wo, wn, Y, X);
 }
 
