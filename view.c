@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <locale.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <ncursesw/ncurses.h>
 
 #include "error.h"
@@ -37,10 +38,7 @@ void view_destroy() {
         check_n(endwin(), "end ncurses");
 }
 
-static void wave() {
-    // Draw an animated wave emanating from the center outwards, and filling
-    // from black to a grey pattern
-
+static void wave_palette(int *po, int *pn, int *wo, int *wn) {
     // Black through blue through white
     const int N = 2*NC - 1; // number of colours
     NCURSES_COLOR_T scale[N];
@@ -49,21 +47,45 @@ static void wave() {
     for (int i = NC; i < N; i++)
         scale[i] = RGB2P(i-NC+1, i-NC+1, NC-1);
 
-    // Set up pairs
-    const int off = 2,     // offset between fore and back
-              P = N - off; // number of pairs
-    for (int i = 0; i < P; i++) {
-        NCURSES_COLOR_T b = scale[i],     // back
-                        f = scale[i+off], // fore
-                        p = i+1;          // pair ID
+    // Set up pairs for "point"
+    *po = 1; // point pair offset
+    *pn = N; // point pair count
+    for (int i = 0; i < *pn; i++) {
+        NCURSES_COLOR_T b = scale[0], // back
+                        f = scale[i]; // fore
+        NCURSES_PAIRS_T p = i + *po;  // pair ID
         assert_n(init_pair(p, f, b), "init pair");
     }
 
-    // Test output
-    assert_n(wmove(view.win, 0, 0), "move cur");
-    for (int i = 0; i < P; i++) {
-        assert_n(wattron(view.win, COLOR_PAIR(i+1)), "switch colour");
-        assert_n(waddch(view.win, 'X'), "output char");
+    // Set up pairs for "wave"
+    const int off = 2; // offset between fore and back
+    *wo = *po + *pn;   // wave pair offset
+    *wn = N - off;     // wave pair count
+    for (int i = 0; i < *wn; i++) {
+        NCURSES_COLOR_T b = scale[i],     // back
+                        f = scale[i+off]; // fore
+        NCURSES_PAIRS_T p = i + *wo;      // pair ID
+        assert_n(init_pair(p, f, b), "init pair");
+    }
+}
+
+static void wave() {
+    // Draw an animated wave emanating from the center outwards, and filling
+    // from black to a grey pattern
+
+    int po, pn, wo, wn; // point offset+count; wave offset+count
+    wave_palette(&po, &pn, &wo, &wn);
+
+    int Y, X;
+    getmaxyx(view.win, Y, X);
+    const int ym = Y/2, xm = X/2;
+    // assert_n(wmove(view.win, ym, xm), "move cur");
+
+    for (int c = 0; c < pn; c++) {
+        assert_n(wattron(view.win, COLOR_PAIR(c + po)), "switch colour");
+        assert_n(mvwaddch(view.win, ym, xm, '.'), "output char");
+        assert_n(wrefresh(view.win), "refresh");
+        assert_c(usleep(200000), "usleep");
     }
 }
 
