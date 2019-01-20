@@ -15,9 +15,23 @@ endif
 
 pkgenv=$(pkgpath) pkg-config ncursesw
 
-flags=-Wall -std=c11 -ggdb
+flags=-Wall -std=c11
+ifeq ($(PROFILE),DEBUG)
+	flags += -ggdb
+else
+	# Oz is like Os but harder
+	flags += -Oz -march=native
+endif
+
 cflags=$(flags) $(shell $(pkgenv) --cflags)
+
 ldflags=$(flags) $(shell $(pkgenv) --libs)
+ifeq ($(PROFILE),DEBUG)
+	# Nothing else here
+else
+	ldflags += -Wl,-no_pie -Wl,-S -Wl,-x -Wl,-dead_strip_dylibs
+endif
+
 
 .PHONY: all clean
 
