@@ -130,8 +130,8 @@ static void wave_explode(NCURSES_PAIRS_T wo, NCURSES_PAIRS_T wn,
     const float fmax = 20,        // max update freq, Hz
                 tmin = 1/fmax,    // min update period, s
                 trun = 3,         // total run time, s
-                tfac = 16,        // time scale factor
-                size = MIN(X, Y); // smallest screen dimension in chars
+                tfac = 10,        // time scale factor
+                size = MAX(X, Y); // largest screen dimension in chars
 
     // Otherwise lrintf won't behave like we expect
     assert_b(FLT_ROUNDS == FLT_ROUNDS_NEAREST, "support float rounding");
