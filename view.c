@@ -23,7 +23,7 @@ struct {
 } static view;
 
 
-static float timeDelta(struct timespec t1, struct timespec t2) {
+static float time_delta(struct timespec t1, struct timespec t2) {
     return t2.tv_sec - t1.tv_sec + 1e-9*(t2.tv_nsec - t1.tv_nsec);
 }
 
@@ -61,6 +61,20 @@ static void noise(NCURSES_SIZE_T Y, NCURSES_SIZE_T X) {
     for (int i = 0; i < X*Y - 1; i++) {
         char c = cmin + rand()%(cmax - cmin + 1);
         assert_n(waddch(view.win, c), "output char");
+    }
+}
+
+static void show_title(const char *title, int titlesz,
+    NCURSES_SIZE_T Y, NCURSES_SIZE_T X, NCURSES_SIZE_T *spots) {
+    const NCURSES_SIZE_T width = X/3,
+                         pitch = width/titlesz,
+                         y = Y/2,
+                         xleft = (X - (titlesz - 1)*pitch)/2;
+
+    for (int i = 0; i < titlesz; i++) {
+        NCURSES_SIZE_T x = xleft + i*pitch;
+        spots[i] = x;
+        assert_n(mvwaddch(view.win, y, x, title[i]), "output title");
     }
 }
 
@@ -128,7 +142,7 @@ static void wave_explode(NCURSES_PAIRS_T wo, NCURSES_PAIRS_T wn,
     do {
         struct timespec frame_start;
         assert_c(clock_gettime(CLOCK_MONOTONIC, &frame_start), "get time");
-        t = timeDelta(start, frame_start)/trun;
+        t = time_delta(start, frame_start)/trun;
 
         for (NCURSES_SIZE_T y = 0; y < Y; y++) {
             // Normalize coordinates, center, correct for aspect ratio
@@ -152,7 +166,7 @@ static void wave_explode(NCURSES_PAIRS_T wo, NCURSES_PAIRS_T wn,
 
         struct timespec frame_mid;
         assert_c(clock_gettime(CLOCK_MONOTONIC, &frame_mid), "get time");
-        float remain = tmin - timeDelta(frame_start, frame_mid);
+        float remain = tmin - time_delta(frame_start, frame_mid);
         if (remain > 0)
             assert_c(usleep(1e6*remain), "usleep");
 
@@ -172,6 +186,12 @@ static void wave() {
 
     wave_point(po, pn, Y, X);
     noise(Y, X);
+
+    const char title[] = "UROGUE";
+    const int titlesz = sizeof(title) - 1;
+    NCURSES_SIZE_T spots[titlesz];
+    show_title(title, titlesz, Y, X, spots);
+
     wave_explode(wo, wn, Y, X);
 }
 
