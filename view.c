@@ -79,7 +79,8 @@ static void show_title(const char *title, int titlesz,
 }
 
 static void wave_palette(NCURSES_PAIRS_T *po, NCURSES_PAIRS_T *pn,
-                         NCURSES_PAIRS_T *wo, NCURSES_PAIRS_T *wn) {
+                         NCURSES_PAIRS_T *wo, NCURSES_PAIRS_T *wn,
+                         NCURSES_PAIRS_T *to, NCURSES_PAIRS_T *tn) {
     // Black through blue through white
     const int N = 2*NC - 1; // number of colours
     NCURSES_COLOR_T scale[N];
@@ -88,26 +89,24 @@ static void wave_palette(NCURSES_PAIRS_T *po, NCURSES_PAIRS_T *pn,
     for (int i = NC; i < N; i++)
         scale[i] = RGB2P(i-NC+1, i-NC+1, NC-1);
 
-    // Set up pairs for "point"
+    // Set up pairs for "point": varying foreground, black background
     *po = 1; // point pair offset
     *pn = N; // point pair count
-    for (NCURSES_PAIRS_T i = 0; i < *pn; i++) {
-        NCURSES_COLOR_T b = scale[0], // back
-                        f = scale[i]; // fore
-        NCURSES_PAIRS_T p = i + *po;  // pair ID
-        assert_n(init_pair(p, f, b), "init pair");
-    }
+    for (NCURSES_PAIRS_T i = 0; i < *pn; i++)
+        assert_n(init_pair(i + *po, scale[i], scale[0]), "init pair");
 
-    // Set up pairs for "wave"
+    // Set up pairs for "wave": varying foreground, dimmer background
     const NCURSES_PAIRS_T off = 1; // offset between fore and back
     *wo = *po + *pn;               // wave pair offset
     *wn = N - off;                 // wave pair count
-    for (NCURSES_PAIRS_T i = 0; i < *wn; i++) {
-        NCURSES_COLOR_T b = scale[i],     // back
-                        f = scale[i+off]; // fore
-        NCURSES_PAIRS_T p = i + *wo;      // pair ID
-        assert_n(init_pair(p, f, b), "init pair");
-    }
+    for (NCURSES_PAIRS_T i = 0; i < *wn; i++)
+        assert_n(init_pair(i + *wo, scale[i+off], scale[i]), "init pair");
+
+    // Set up pairs for "title": white foreground, varying background
+    *to = *wo + *wn;
+    *tn = N;
+    for (NCURSES_PAIRS_T i = 0; i < *tn; i++)
+        assert_n(init_pair(i + *to, scale[N-1], scale[i]), "init pair");
 }
 
 static void wave_point(NCURSES_PAIRS_T po, NCURSES_PAIRS_T pn,
@@ -123,6 +122,8 @@ static void wave_point(NCURSES_PAIRS_T po, NCURSES_PAIRS_T pn,
 }
 
 static void wave_explode(NCURSES_PAIRS_T wo, NCURSES_PAIRS_T wn,
+                         NCURSES_PAIRS_T to, NCURSES_PAIRS_T tn,
+                         const NCURSES_SIZE_T *spots, int titlesz,
                          NCURSES_SIZE_T Y, NCURSES_SIZE_T X) {
     // Radially symmetrical, piecewise sine
     // Increasing the frequency any further causes page tearing.
@@ -156,7 +157,20 @@ static void wave_explode(NCURSES_PAIRS_T wo, NCURSES_PAIRS_T wn,
                 else
                     z = sin(r);
 
-                NCURSES_PAIRS_T c = wo + lrintf(z*(wn - 1));
+                NCURSES_PAIRS_T c = lrintf(z*(wn - 1));
+                if (y == Y/2) {
+                    for (int i = 0;;) {
+                        if (spots[i] == x) {
+                            c += to; // use title offset
+                            break;
+                        }
+                        if (++i >= titlesz) {
+                            c += wo; // non-title; use wave offset
+                            break;
+                        }
+                    }
+                }
+                else c += wo;
 
                 assert_n(mvwchgat(view.win, y, x, 1, A_NORMAL, c, NULL),
                          "change colour");
@@ -177,9 +191,9 @@ static void wave() {
     // Draw an animated wave emanating from the center outwards, and filling
     // from black to a blue pattern
 
-    NCURSES_PAIRS_T po, wo, // point and wave offsets
-                    pn, wn; // point and wave counts
-    wave_palette(&po, &pn, &wo, &wn);
+    // Offsets and counts for point, wave and title graphics
+    NCURSES_PAIRS_T po, wo, to, pn, wn, tn;
+    wave_palette(&po, &pn, &wo, &wn, &to, &tn);
 
     const NCURSES_SIZE_T Y = getmaxy(view.win),
                          X = getmaxx(view.win);
@@ -192,7 +206,7 @@ static void wave() {
     NCURSES_SIZE_T spots[titlesz];
     show_title(title, titlesz, Y, X, spots);
 
-    wave_explode(wo, wn, Y, X);
+    wave_explode(wo, wn, to, tn, spots, titlesz, Y, X);
 }
 
 void view_splash() {
