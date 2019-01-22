@@ -91,10 +91,10 @@ static NCURSES_PAIRS_T wave_c_from_xy(NCURSES_SIZE_T y, NCURSES_SIZE_T x,
                                       float t, const Wave *w) {
 
     const float size = MAX(w->X, w->Y),     // largest screen dimension in chars
-                xn = (x - w->X/2.)/size, // Normalize, center, correct for aspect
+                xn = (x - w->X/2.)/size,    // Normalize, center, fix aspect
                 yn = (y - w->Y/2.)/size / ASPECT,
-                tfac = 10,            // time scale factor
-                r = sqrt(xn*xn + yn*yn)/t / tfac;
+                tfac = 10,                  // time scale factor
+                r = sqrt(xn*xn + yn*yn)/t / tfac; // radius
 
     float z;
     if (r > M_PI)
