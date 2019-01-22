@@ -13,14 +13,12 @@
 // See https://www.gnu.org/software/libc/manual/html_node/Floating-Point-Parameters.html
 #define FLT_ROUNDS_NEAREST 1
 
-
 const char title[] = "UROGUE";
-const int titlesz = sizeof(title) - 1;
+const int title_len = sizeof(title) - 1;
 
 typedef struct {
     WINDOW *win;
-    NCURSES_SIZE_T Y, X, spots[titlesz];
-
+    NCURSES_SIZE_T Y, X, title_left, title_pitch;
     NCURSES_PAIRS_T wo, wn, to, tn, po, pn;
 } Wave;
 
@@ -39,14 +37,13 @@ static void noise(const Wave *w) {
 
 static void show_title(Wave *w) {
     const NCURSES_SIZE_T width = w->X/3,
-                         pitch = width/titlesz,
-                         y = w->Y/2,
-                         xleft = (w->X - (titlesz - 1)*pitch)/2;
+                         y = w->Y/2;
+    w->title_pitch = width/title_len;
+    w->title_left = (w->X - (title_len - 1)*w->title_pitch)/2;
 
-    for (int i = 0; i < titlesz; i++) {
-        NCURSES_SIZE_T x = xleft + i*pitch;
-        w->spots[i] = x;
-        assert_n(mvwaddch(view.win, y, x, title[i]), "output title");
+    for (int i = 0; i < title_len; i++) {
+        NCURSES_SIZE_T x = w->title_left + i*w->title_pitch;
+        assert_n(mvwaddch(w->win, y, x, title[i]), "output title");
     }
 }
 
@@ -106,15 +103,14 @@ static NCURSES_PAIRS_T wave_c_from_xy(NCURSES_SIZE_T y, NCURSES_SIZE_T x,
         z = sin(r);
 
     NCURSES_PAIRS_T c = lrintf(z*(w->wn - 1));
-    if (y != w->Y/2)
-        return c + w->wo;
-
-    for (int i = 0;;) {
-        if (w->spots[i] == x)
+    if (y == w->Y/2) {
+        short i = x - w->title_left;
+        if (i >= 0 &&
+            i < w->title_pitch * title_len &&
+            !(i % w->title_pitch))
             return c + w->to; // use title offset
-        if (++i >= titlesz)
-            return c + w->wo; // non-title; use wave offset
     }
+    return c + w->wo; // use wave offset
 }
 
 static void wave_explode(const Wave *w) {
