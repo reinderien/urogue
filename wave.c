@@ -79,7 +79,7 @@ static void wave_palette(Wave *w) {
         assert_n(init_pair(i + w->to, scale[N-1], scale[i]), "init pair");
 }
 
-static void wave_point(Wave *w) {
+static void wave_point(const Wave *w) {
     const NCURSES_SIZE_T ym = w->Y/2, xm = w->X/2;
 
     for (NCURSES_PAIRS_T c = 0; c < w->pn; c++) {
@@ -91,7 +91,7 @@ static void wave_point(Wave *w) {
 }
 
 static NCURSES_PAIRS_T wave_c_from_xy(NCURSES_SIZE_T y, NCURSES_SIZE_T x,
-                                      float t, Wave *w) {
+                                      float t, const Wave *w) {
 
     const float size = MAX(w->X, w->Y),     // largest screen dimension in chars
                 xn = (x - w->X/2.)/size, // Normalize, center, correct for aspect
@@ -117,7 +117,7 @@ static NCURSES_PAIRS_T wave_c_from_xy(NCURSES_SIZE_T y, NCURSES_SIZE_T x,
     }
 }
 
-static void wave_explode(Wave *w) {
+static void wave_explode(const Wave *w) {
     // Radially symmetrical, piecewise sine
     // Increasing the frequency any further causes page tearing.
     const float fmax = 20,        // max update freq, Hz
