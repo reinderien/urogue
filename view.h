@@ -14,6 +14,18 @@
 // 0 <= w < 24
 #define GS2P(w) (232 + (w))
 
+// Character aspect ratio. This is basically a guess
+#define ASPECT 0.5
+
+// Rather than including ncurses.h here
+typedef struct _win_st WINDOW;
+
+typedef struct {
+    WINDOW *win;
+} View;
+extern View view;
+
+
 void view_init();
 void view_destroy();
 void view_splash();

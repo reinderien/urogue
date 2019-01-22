@@ -32,12 +32,14 @@ else
 	ldflags += -Wl,-no_pie -Wl,-S -Wl,-x -Wl,-dead_strip_dylibs
 endif
 
+mods=error main mobs util view wave
+
 
 .PHONY: all clean
 
 all: urogue
 
-urogue: error.o main.o mobs.o view.o
+urogue: $(mods:=.o)
 	gcc -o $@ $^ $$ldflags
 
 %.o: %.d
@@ -46,7 +48,7 @@ urogue: error.o main.o mobs.o view.o
 %.d: %.c makefile
 	gcc -o $@ $< $$cflags -M
 
--include error.d main.d mobs.d view.d
+-include $(mods:=.d)
 
 clean:
 	rm -f *.o *.d urogue
