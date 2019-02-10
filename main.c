@@ -1,6 +1,6 @@
-#include <ctype.h>             // for toupper()
-#include <ncursesw/ncurses.h>  // for getch()
-#include <stdlib.h>            // for atexit()
+#include <ctype.h>    // for toupper()
+#include <ncurses.h>  // for getch()
+#include <stdlib.h>   // for atexit()
 
 #include "error.h"
 #include "mobs.h"

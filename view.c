@@ -1,5 +1,5 @@
 #include <locale.h>    // setlocale
-#include <ncursesw/ncurses.h>
+#include <ncurses.h>
 
 #include "error.h"
 #include "view.h"

@@ -4,7 +4,7 @@
 #include <sys/param.h> // MIN, MAX
 #include <time.h>      // clock_gettime
 #include <unistd.h>    // usleep
-#include <ncursesw/ncurses.h>
+#include <ncurses.h>
 
 #include "error.h"
 #include "util.h"
