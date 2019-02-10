@@ -1,4 +1,4 @@
-#!/usr/bin/env make -j -f
+#!/usr/bin/env -S make -j -f
 
 # Requirements:
 #   Ubuntu
